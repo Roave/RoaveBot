@@ -22,7 +22,11 @@
   "dependencies": {
     "hubot": ">= 2.6.0 < 3.0.0",
     "hubot-scripts": ">= 2.5.0 < 3.0.0",
-    "hubot-irc": "~0.1.17"
+    "cleverbot-node": "0.1.1",
+    "hubot-irc": "~0.1.17",
+    "wolfram": "~0.2.6",
+    "jsdom": "~0.7.0",
+    "jquery": "~1.8.3"
   },
   "engines": {
     "node": ">= 0.8.x",

@@ -1,1 +1,10 @@
-["redis-brain.coffee", "shipit.coffee"]
+[
+"redis-brain.coffee",
+"karma.coffee",
+"wolfram.coffee",
+"wunderground.coffee",
+"phpdoc.coffee",
+"git-help.coffee",
+"time.coffee",
+"reload.coffee"
+]
