@@ -59,6 +59,7 @@ smscloudQueue = (msg) ->
         msg.send "SMSCloud is busy with #{status.length} messages queued"
       else if status.status == "alert"
         msg.send "SMSCloud is having a hard time with #{status.length} messages queued"
+        smscloudLargestQueue msg
 
 smscloudLargestQueue = (msg) ->
   msg.http('http://smscloud.com/status/largest-queue')
