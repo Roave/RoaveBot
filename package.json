@@ -26,7 +26,8 @@
     "hubot-irc": "~0.1.17",
     "wolfram": "~0.2.6",
     "jsdom": "~0.7.0",
-    "jquery": "~1.8.3"
+    "jquery": "~1.8.3",
+    "jayson": "~1.0.11"
   },
   "engines": {
     "node": ">= 0.8.x",
