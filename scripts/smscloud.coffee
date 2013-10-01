@@ -4,11 +4,11 @@
 # Commands:
 #   hubot smscloud queue - Display SMSCloud message queue size
 #   hubot keep us updated on smscloud [every <n> minutes] - Display SMSCloud message queue size every <n> minutes, defaulting to 30
-#   hubot send an sms to <number> [with message <message>] - Sends an SMS to a given number, with a given message (or "test")
+#   hubot send an sms to <toNumber> [from <fromNumber>] [with message <message>] - Sends an SMS to a given number, from a given number, with a given message (or "test")
 
 jayson = require('jayson')
 
-fromNumber = process.env.HUBOT_SMSCLOUD_FROMNUMBER
+mainFromNumber = process.env.HUBOT_SMSCLOUD_FROMNUMBER
 apiKey = process.env.HUBOT_SMSCLOUD_API_KEY
 
 smscloudClient = jayson.client.http({
@@ -29,13 +29,17 @@ module.exports = (robot) ->
     , 1000 * 60 * minuteInterval
     msg.send "Alright, I'll keep you updated"
   
-  robot.respond /send an sms to ([\+\d]+)(?: with message (.*))?/i, (msg) ->
-    number = msg.match[1].trim()
-    message = "test"
+  robot.respond /send (?:an )?sms to ([\+\d]+)(?: from ([\+\d]+))?(?: with message (.*))?/i, (msg) ->
+    toNumber = msg.match[1].trim()
     if msg.match[2] != undefined
-      message = msg.match[2].trim()
+      fromNumber = msg.match[2].trim()
+    else
+      fromNumber = mainFromNumber
+    message = "test"
+    if msg.match[3] != undefined
+      message = msg.match[3].trim()
     
-    smscloudMessage msg, number, message, (result) ->
+    smscloudMessage msg, toNumber, fromNumber, message, (result) ->
       if result.success
         msg.send "Message sent (#{result.smsid})"
       else
@@ -52,14 +56,14 @@ smscloudQueue = (msg) ->
       else if status.status == "alert"
         msg.send "SMSCloud is having a hard time with #{status.length} messages queued"
 
-smscloudMessage = (msg, toNumber, message, cb) ->
+smscloudMessage = (msg, toNumber, fromNumber, message, cb) ->
   smscloudClient.request 'sms.send', [fromNumber, toNumber, message, 1], (err, response) ->
     result = {
       success: true,
       error: null,
       smsid: null
     }
-    if err
+    if err || response.result == null
       result.success = false
       result.error = err
     else
