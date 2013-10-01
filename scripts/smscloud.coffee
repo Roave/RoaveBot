@@ -3,6 +3,7 @@
 #
 # Commands:
 #   hubot smscloud queue - Display SMSCloud message queue size
+#   hubot smscloud culprit - Display the largest DID queue
 #   hubot keep us updated on smscloud [every <n> minutes] - Display SMSCloud message queue size every <n> minutes, defaulting to 30
 #   hubot send an sms to <toNumber> [from <fromNumber>] [with message <message>] - Sends an SMS to a given number, from a given number, with a given message (or "test")
 
@@ -19,6 +20,9 @@ smscloudClient = jayson.client.http({
 module.exports = (robot) ->
   robot.respond /smscloud queue/i, (msg) ->
     smscloudQueue msg
+  
+  robot.respond /smscloud culprit/i, (msg) ->
+    smscloudLargestQueue msg
   
   robot.respond /keep us updated on smscloud(?: every (\d+) minute(?:s)?)?/i, (msg) ->
     minuteInterval = 30
@@ -55,6 +59,12 @@ smscloudQueue = (msg) ->
         msg.send "SMSCloud is busy with #{status.length} messages queued"
       else if status.status == "alert"
         msg.send "SMSCloud is having a hard time with #{status.length} messages queued"
+
+smscloudLargestQueue = (msg) ->
+  msg.http('http://smscloud.com/status/largest-queue')
+    .get() (err, resp, body) ->
+      queue = JSON.parse(body)
+      msg.send "The largest DID queue is #{queue.length} message(s), for #{queue.number}"
 
 smscloudMessage = (msg, toNumber, fromNumber, message, cb) ->
   smscloudClient.request 'sms.send', [fromNumber, toNumber, message, 1], (err, response) ->
