@@ -18,6 +18,8 @@ smscloudClient = jayson.client.http({
 })
 
 module.exports = (robot) ->
+  smscloudUpdateIntervalId = null
+
   robot.respond /smscloud queue/i, (msg) ->
     smscloudQueue msg
   
@@ -25,6 +27,10 @@ module.exports = (robot) ->
     smscloudLargestQueue msg
   
   robot.respond /keep us updated on smscloud(?: every (\d+) minute(?:s)?)?/i, (msg) ->
+    if smscloudUpdateIntervalId
+      clearInterval smscloudUpdateIntervalId
+      smscloudUpdateIntervalId = null
+  
     minuteInterval = 30
     if msg.match[1]
       minuteInterval = parseInt(msg.match[1])
