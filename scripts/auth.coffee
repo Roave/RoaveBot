@@ -105,3 +105,10 @@ module.exports = (robot) ->
       adminNames.push user.name if user?
 
     msg.reply "The following people have the 'admin' role: #{adminNames.join(', ')}"
+  
+  robot.respond /what is @?(.+)'s user id\?*$/i, (msg) ->
+    name = msg.match[1].trim()
+    user = robot.brain.userForName(name)
+    return msg.reply "#{name} does not exist" unless user?
+    
+    msg.reply "#{name}'s user id is #{user.id}"
