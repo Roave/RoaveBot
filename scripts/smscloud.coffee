@@ -7,6 +7,7 @@
 #   hubot keep us updated on smscloud [every <n> minutes] - Display SMSCloud message queue size every <n> minutes, defaulting to 30
 #   hubot send an sms to <toNumber> [from <fromNumber>] [with message <message>] - Sends an SMS to a given number, from a given number, with a given message (or "test")
 #   hubot what carrier for <number> - NVS lookup for a given number
+#   hubot whose number is <number> - SMSCloud number information lookup
 
 jayson = require('jayson')
 
@@ -51,14 +52,17 @@ module.exports = (robot) ->
       message = msg.match[3].trim()
     
     smscloudMessage msg, toNumber, fromNumber, message, (result) ->
-      if result.success
-        msg.send "Message sent (#{result.smsid})"
-      else
-        console.log result.error
+      msg.send "Message sent (#{result.sms_id})"
 
   robot.respond /(?:what|which) carrier for ([\+\d]+)/i, (msg) ->
     number = msg.match[1]
-    smscloudCarrierLookup msg, number
+    smscloudCarrierLookup msg, number, (info) ->
+      msg.send "That number is from a #{info.carrier_type} carrier, #{info.carrier_name} in #{info.location}"
+  
+  robot.respond /whose number is ([\+\d]+)/i, (msg) ->
+    number = msg.match[1]
+    smscloudNumberLookup msg, number, (info) ->
+      msg.send "That number is from account #{info.account_name} (#{info.account_id})"
 
 smscloudQueue = (msg) ->
   msg.http('http://smscloud.com/status/queue-size')
@@ -80,23 +84,21 @@ smscloudLargestQueue = (msg) ->
 
 smscloudMessage = (msg, toNumber, fromNumber, message, cb) ->
   smscloudClient.request 'sms.send', [fromNumber, toNumber, message, 1], (err, response) ->
-    result = {
-      success: true,
-      error: null,
-      smsid: null
-    }
     if err || response.result == null
-      result.success = false
-      result.error = err
+      msg.send "Sorry, I couldn't send that message"
     else
-      result.smsid = response.result.sms_id
-    
-    cb result
+      cb response.result
 
-smscloudCarrierLookup = (msg, number) ->
+smscloudCarrierLookup = (msg, number, cb) ->
   smscloudClient.request 'nvs.carrierLookup', [number], (err, response) ->
     if err || response.result == null
       msg.send "Sorry, I couldn't look that number up"
     else
-      msg.send "That number is from a #{response.result.carrier_type} carrier, #{response.result.carrier_name} in #{response.result.location}"
+      cb response.result
 
+smscloudNumberLookup = (msg, number, cb) ->
+  smscloudClient.request 'admin.numberInfo', [number], (err, response) ->
+    if err || response.result == null
+      msg.send "Sorry, I couldn't look that number up"
+    else
+      cb response.result
