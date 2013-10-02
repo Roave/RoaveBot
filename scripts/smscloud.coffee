@@ -6,6 +6,7 @@
 #   hubot smscloud culprit - Display the largest DID queue
 #   hubot keep us updated on smscloud [every <n> minutes] - Display SMSCloud message queue size every <n> minutes, defaulting to 30
 #   hubot send an sms to <toNumber> [from <fromNumber>] [with message <message>] - Sends an SMS to a given number, from a given number, with a given message (or "test")
+#   hubot what carrier for <number> - NVS lookup for a given number
 
 jayson = require('jayson')
 
@@ -55,6 +56,10 @@ module.exports = (robot) ->
       else
         console.log result.error
 
+  robot.respond /(?:what|which) carrier for ([\+\d]+)/i, (msg) ->
+    number = msg.match[1]
+    smscloudCarrierLookup msg, number
+
 smscloudQueue = (msg) ->
   msg.http('http://smscloud.com/status/queue-size')
     .get() (err, resp, body) ->
@@ -87,3 +92,11 @@ smscloudMessage = (msg, toNumber, fromNumber, message, cb) ->
       result.smsid = response.result.sms_id
     
     cb result
+
+smscloudCarrierLookup = (msg, number) ->
+  smscloudClient.request 'nvs.carrierLookup', [number], (err, response) ->
+    if err || response.result == null
+      msg.send "Sorry, I couldn't look that number up"
+    else
+      msg.send "That number is from a #{response.result.carrier_type} carrier, #{response.result.carrier_name} in #{response.result.location}"
+
