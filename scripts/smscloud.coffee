@@ -24,12 +24,18 @@ module.exports = (robot) ->
   smscloudUpdateIntervalId = null
 
   robot.respond /smscloud queue/i, (msg) ->
+    hasAccess = robot.auth.hasRole msg.message.user, 'smscloud'
+    return false unless hasAccess?
     smscloudQueue msg
   
   robot.respond /smscloud culprit/i, (msg) ->
+    hasAccess = robot.auth.hasRole msg.message.user, 'smscloud'
+    return false unless hasAccess?
     smscloudLargestQueue msg
   
   robot.respond /keep us updated on smscloud(?: every (\d+) minute(?:s)?)?/i, (msg) ->
+    hasAccess = robot.auth.hasRole msg.message.user, 'smscloud'
+    return false unless hasAccess?
     if smscloudUpdateIntervalId
       clearInterval smscloudUpdateIntervalId
       smscloudUpdateIntervalId = null
@@ -43,6 +49,8 @@ module.exports = (robot) ->
     msg.send "Alright, I'll keep you updated"
   
   robot.respond /send (?:an )?sms to ([\+\d]+)(?: from ([\+\d]+))?(?: with message (.*))?/i, (msg) ->
+    hasAccess = robot.auth.hasRole msg.message.user, 'smscloud'
+    return false unless hasAccess?
     toNumber = msg.match[1].trim()
     if msg.match[2] != undefined
       fromNumber = msg.match[2].trim()
@@ -56,16 +64,22 @@ module.exports = (robot) ->
       msg.send "Message sent (#{result.sms_id})"
 
   robot.respond /(?:what|which) carrier for ([\+\d]+)/i, (msg) ->
+    hasAccess = robot.auth.hasRole msg.message.user, 'smscloud'
+    return false unless hasAccess?
     number = msg.match[1]
     smscloudCarrierLookup msg, number, (info) ->
       msg.send "That number is from a #{info.carrier_type} carrier, #{info.carrier_name} in #{info.location}"
   
   robot.respond /whose number is ([\+\d]+)/i, (msg) ->
+    hasAccess = robot.auth.hasRole msg.message.user, 'smscloud'
+    return false unless hasAccess?
     number = msg.match[1]
     smscloudNumberLookup msg, number, (info) ->
       msg.send "That number is from account #{info.account_name} (#{info.account_id})"
   
   robot.respond /tell me about number ([\+\d]+)/i, (msg) ->
+    hasAccess = robot.auth.hasRole msg.message.user, 'smscloud'
+    return false unless hasAccess?
     number = msg.match[1]
     smscloudNumberLookup msg, number, (info) ->
       response = "#{number}: number id #{info.id}, provider is #{info.provider}, internal note is '#{info.internal_note}', rate limit of #{info.rate_limit}ms, account #{info.account_name} (#{info.account_id}), api key id is #{info.api_key_id}"
@@ -74,6 +88,19 @@ module.exports = (robot) ->
       if info.incoming_rewrite_number_id
         response = "#{response}, incoming rewriting to number id #{info.incoming_rewrite_number_id}"
       msg.send response
+  
+  robot.respond /are we having queue problems(?: greater than (\d+))?\?/i, (msg) ->
+    hasAccess = robot.auth.hasRole msg.message.user, 'smscloud'
+    return false unless hasAccess?
+    differential = 5
+    if msg.match[1] != undefined
+      differential = parseInt(msg.match[1].trim())
+    smscloudFaultyQueues msg, differential, (result) ->
+      if result.length > 0
+        numberMessages = ("#{queue.did} has #{queue.length} messages and #{queue.real_length} queued" for queue in result)
+        msg.send numberMessages.join(", ")
+      else
+        msg.send "Not that I can tell" 
 
 smscloudQueue = (msg) ->
   msg.http('http://smscloud.com/status/queue-size')
@@ -113,3 +140,15 @@ smscloudNumberLookup = (msg, number, cb) ->
       msg.send "Sorry, I couldn't look that number up"
     else
       cb response.result
+
+smscloudRealQueueSizes = (msg, cb) ->
+  smscloudClient.request 'admin.realQueueSizes', [], (err, response) ->
+    if err || response.result == null
+      msg.send "Sorry, I couldn't fetch the real queue sizes"
+    else
+      cb response.result
+
+smscloudFaultyQueues = (msg, differential, cb) ->
+  smscloudRealQueueSizes msg, (result) ->
+    result = (queue for queue in result when Math.abs(queue.length - queue.real_length) >= differential)
+    cb result
