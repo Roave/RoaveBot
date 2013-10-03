@@ -9,6 +9,7 @@
 #   hubot what carrier for <number> - NVS lookup for a given number
 #   hubot whose number is <number> - SMSCloud account lookup for number
 #   hubot tell me about number <number> - SMSCloud number information lookup
+#   hubot are we having queue (?:problems|issues) [greater than <n>]? - Check the differential on database queues to redis queues
 
 jayson = require('jayson')
 
@@ -89,7 +90,7 @@ module.exports = (robot) ->
         response = "#{response}, incoming rewriting to number id #{info.incoming_rewrite_number_id}"
       msg.send response
   
-  robot.respond /are we having queue problems(?: greater than (\d+))?\?/i, (msg) ->
+  robot.respond /are we having queue problems(?: greater than (\d+))?\??/i, (msg) ->
     hasAccess = robot.auth.hasRole msg.message.user, 'smscloud'
     return false unless hasAccess?
     differential = 5
