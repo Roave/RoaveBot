@@ -48,6 +48,8 @@ module.exports = (robot) ->
       return false
 
   robot.auth = new Auth
+  
+  robot.auth.admins = admins
 
   robot.respond /@?(.+) (has) (["'\w: -_]+) (role)/i, (msg) ->
     name    = msg.match[1].trim()
