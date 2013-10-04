@@ -41,13 +41,13 @@ module.exports = (robot) ->
     if hasAccess isnt true
       return false
     if smscloudUpdateIntervalId
-      clearInterval smscloudUpdateIntervalId
+      robot.intervals.remove smscloudUpdateIntervalId
       smscloudUpdateIntervalId = null
   
     minuteInterval = 30
     if msg.match[1]
       minuteInterval = parseInt(msg.match[1])
-    smscloudUpdateIntervalId = setInterval () ->
+    smscloudUpdateIntervalId = robot.intervals.add () ->
       smscloudQueue msg
     , 1000 * 60 * minuteInterval
     msg.send "Alright, I'll keep you updated"
