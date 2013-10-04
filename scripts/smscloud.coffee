@@ -48,8 +48,9 @@ module.exports = (robot) ->
     if msg.match[1]
       minuteInterval = parseInt(msg.match[1])
     intervalClosure = do (msg) ->
+      origMsg = new robot.Response(msg.robot, msg.message, msg.match)
       return ->
-        smscloudQueue msg
+        smscloudQueue origMsg
     smscloudUpdateIntervalId = robot.intervals.add intervalClosure, 1000 * 60 * minuteInterval
     msg.send "Alright, I'll keep you updated"
   
