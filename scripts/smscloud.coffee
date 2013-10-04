@@ -47,9 +47,11 @@ module.exports = (robot) ->
     minuteInterval = 30
     if msg.match[1]
       minuteInterval = parseInt(msg.match[1])
-    smscloudUpdateIntervalId = robot.intervals.add () ->
-      smscloudQueue msg
-    , 1000 * 60 * minuteInterval
+    intervalClosure = do ->
+      msg = msg
+      return ->
+        smscloudQueue msg
+    smscloudUpdateIntervalId = robot.intervals.add intervalClosure, 1000 * 60 * minuteInterval
     msg.send "Alright, I'll keep you updated"
   
   robot.respond /send (?:an )?sms to ([\+\d]+)(?: from ([\+\d]+))?(?: with message (.*))?/i, (msg) ->
