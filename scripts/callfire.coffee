@@ -90,7 +90,7 @@ callfireHandleResponse = (msg, client) ->
       when 'Resource' then msg.send JSON.stringify(response.resource, undefined, ' ')
       when 'ResourceList' then msg.send "Total Results: #{response.totalResults}\n" + JSON.stringify(response.resources, undefined, ' ')
       when 'ResourceException' then msg.send "[#{response.httpStatus}] #{response.message}"
-      when 'ResourceReference' then msg.send "Not implemented"
+      when 'ResourceReference' then msg.send "(#{response.id}) #{response.location}"
     return
   
   return callback
